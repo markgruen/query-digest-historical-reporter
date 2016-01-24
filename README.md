@@ -20,4 +20,4 @@ Mark Gruenberg - Initial work
 See also the list of [contributors](https://github.com/markgruen/query-digest-historical-reporter/edit/master/contributors.md) who participated in this project.
 
 # License
-This project is licensed under the MIT License - see the [LICENSE.md](https://github.com/markgruen/query-digest-historical-reporter/edit/master/LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/markgruen/query-digest-historical-reporter/edit/master/LICENSE) file for details
