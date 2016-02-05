@@ -124,10 +124,14 @@ def get_top_n_tags(n):
     p = re.compile(r'# Profile.*# Query 1:', re.DOTALL)
 
     if files is not []:
-        file = [f for f in sorted(files, reverse=True)][0]
-        with open(file, 'r') as f:
-            buff = f.read()
-
+        #file = [f for f in sorted(files, reverse=True) if ][0]
+        for file in sorted(files, reverse=True):
+            if os.path.getsize(file) < 512:
+                continue
+            else:
+                with open(file, 'r') as f:
+                    buff = f.read()
+                break
         m = p.search(buff)
         n = int(n) + 3
         plist = m.group(0).splitlines()[3:+n]
@@ -245,7 +249,7 @@ def top_head(f, N):
     """
     p = re.compile(r'Exec time|Current date:|Time range:|Overall|Lock time|Rows sent|Rows examined|Rows affecte|Bytes sent|Query size')
     f.seek(0,0)
-    head = list(itertools.islice(f, 20))
+    head = list(itertools.islice(f, N))
     data = [l.strip() for l in head if p.search(l)]
     tdata = get_top_level_data(data)
     return tdata
@@ -352,6 +356,8 @@ def gfiles(days=None, start_date=None, end_date=None):
     if days:
         compare = lambda d:d > datetime.now().date() - timedelta(days=int(days))
         for file in sorted(files, reverse=True):
+            if os.path.getsize(file) < 512:
+                continue
             with open(file, 'r') as f:
                 date, time = get_report_date(f)
             if compare(date.date()):
@@ -376,11 +382,14 @@ def do_query_tag_report(query_tag, i, days, start, end):
     for file in gfiles(days, start, end):
         with open(file, 'r') as f:
             date, time = get_report_date(f)
-            qdata, sql = head_match(f, query_tag, 30)
-            hdata = top_head(f, 20)
+            qdata, sql = head_match(f, query_tag, 70)
+            hdata = top_head(f, 70)
             if first:
                 first = False
-                print(sqlparse.format('\n'.join(sql), reindent=True, keyword_case='upper'))
+                try:
+                    print(sqlparse.format('\n'.join(sql), reindent=True, keyword_case='upper'))
+                except IndexError, e:
+                    print(sqlparse.format('\n'.join(sql), keyword_case='upper'))
                 print('')
 
                 print('{0:10} {1:8}  {2:>10}   {3:>9}   {4:>9}   {5:>12}   {6:>11s}  '
