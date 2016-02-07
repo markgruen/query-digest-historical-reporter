@@ -13,6 +13,7 @@ Options:
   -h, --help                Show the help
   -t <N>, --top=<N>         Report on the resent top N queries
   -v, --version             Show the current version
+  --no-sql                  Don't show sql for the query tag
 
 Others:
   -d=<D>, --days=<D>         Report for <D> days from today
@@ -312,7 +313,7 @@ def head_match(f, match, N):
     finds a query tag and returns head of the report
     '''
     p = re.compile(r'# Count|# Exec time|# Lock time|# Rows |# Bytes sent|# Query size|# Databases|# Hosts|#Users')
-    sqlp = re.compile(r'# EXPLAIN \/\*!50100 PARTITIONS\*\/|call |COMMIT|update')
+    sqlp = re.compile(r'# EXPLAIN \/\*!50100 PARTITIONS\*\/|call |COMMIT|update|insert')
     head = None
     sql = None
     is_match = lambda x: True if match in x[1] else False
@@ -329,7 +330,7 @@ def head_match(f, match, N):
         try:
             s = [i for i,l in enumerate(head) if sqlp.search(l)][0]
             sql = [re.sub(r'\\G', ';', l) for l in head[s:]]
-        except ValueError, e:
+        except (ValueError, IndexError), e:
             sql = ''
     # find explain sql
     '''# EXPLAIN /*!50100 PARTITIONS*/ match
@@ -376,7 +377,7 @@ def gfiles(days=None, start_date=None, end_date=None):
                 yield file
 
 
-def do_query_tag_report(query_tag, i, days, start, end):
+def do_query_tag_report(query_tag, i, days, start, end, no_show_sql):
     first = True
     print('\nSlow report for tag #{} {}\n'.format(i+1,query_tag))
     for file in gfiles(days, start, end):
@@ -386,11 +387,12 @@ def do_query_tag_report(query_tag, i, days, start, end):
             hdata = top_head(f, 70)
             if first:
                 first = False
-                try:
-                    print(sqlparse.format('\n'.join(sql), reindent=True, keyword_case='upper'))
-                except IndexError, e:
-                    print(sqlparse.format('\n'.join(sql), keyword_case='upper'))
-                print('')
+                if not no_show_sql:
+                    try:
+                        print(sqlparse.format('\n'.join(sql), reindent=True, keyword_case='upper'))
+                    except IndexError, e:
+                        print(sqlparse.format('\n'.join(sql), keyword_case='upper'))
+                    print('')
 
                 print('{0:10} {1:8}  {2:>10}   {3:>9}   {4:>9}   {5:>12}   {6:>11s}  '
                       '{7:>6s}  {8:>12s} {9:>11s} {10:11s}'.format(
@@ -410,9 +412,9 @@ def do_query_tag_report(query_tag, i, days, start, end):
 
 
 #@multimethod(dict)
-def main_tags(query_tag, days=None, start=None, end=None):
+def main_tags(query_tag, days=None, start=None, end=None, no_show_sql=False):
     for i, tag in enumerate(query_tag):
-        do_query_tag_report(tag, i, days, start, end)
+        do_query_tag_report(tag, i, days, start, end, no_show_sql)
 
 
 #@multimethod()
@@ -437,10 +439,10 @@ def main(**args):
     if args['<query_tag>'] == [] and args['--top'] is None:
         main_top(args['--days'], args['--start-date'], args['--end-date'])
     elif len(args['<query_tag>'])>0:
-        main_tags(args['<query_tag>'], args['--days'], args['--start-date'], args['--end-date'])
+        main_tags(args['<query_tag>'], args['--days'], args['--start-date'], args['--end-date'], args['--no-sql'])
     else:
         tags = get_top_n_tags(args['--top'])
-        main_tags(tags, args['--days'], args['--start-date'], args['--end-date'])
+        main_tags(tags, args['--days'], args['--start-date'], args['--end-date'], args['--no-sql'])
 
 
 if __name__ == '__main__':
