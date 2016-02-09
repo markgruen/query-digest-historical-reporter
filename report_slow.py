@@ -330,7 +330,7 @@ def head_match(f, match, N):
         try:
             s = [i for i,l in enumerate(head) if sqlp.search(l)][0]
             sql = [re.sub(r'\\G', ';', l) for l in head[s:]]
-        except (ValueError, IndexError), e:
+        except ValueError, e:
             sql = ''
     # find explain sql
     '''# EXPLAIN /*!50100 PARTITIONS*/ match
@@ -423,7 +423,7 @@ def main_top(days=None, start=None, end=None):
         'Date', 'Time', 'Total_Queries', 'Unique', 'Exec_Time', 'Lock_Time', 'Ave_Response'))
     for file in gfiles(days, start, end):
         with open(file, 'r') as f:
-            data = top_head(f, 20)
+            data = top_head(f, 70)
         try:
             format(data)
         except Exception, e:
